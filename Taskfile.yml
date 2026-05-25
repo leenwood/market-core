@@ -42,6 +42,11 @@ tasks:
     cmds:
       - go run ./cmd/server
 
+  run:worker:
+    desc: Run async event worker locally (reads .env)
+    cmds:
+      - go run ./cmd/worker
+
   # ── Test ──────────────────────────────────────────────────────────────────
 
   test:

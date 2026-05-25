@@ -2,10 +2,12 @@ package service
 
 import (
 	"context"
+	"errors"
 	"log/slog"
-	"os"
+	"net/http"
 	"os/signal"
 	"syscall"
+	"time"
 
 	internal "market-core/internal"
 	apphttp "market-core/internal/app/http"
@@ -24,14 +26,16 @@ func RunServer(ctx context.Context) error {
 		return err
 	}
 
-	log := logger.New(cfg.LogLevel)
+	log := logger.New(cfg.Log.Level, cfg.Log.Format)
 	slog.SetDefault(log)
+
+	ctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
 	infra, err := initInfra(ctx, cfg)
 	if err != nil {
 		return err
 	}
-	defer infra.DB.Close()
 
 	// product use cases
 	createProduct := productUC.NewCreateUseCase(infra.Products, infra.Categories)
@@ -52,32 +56,39 @@ func RunServer(ctx context.Context) error {
 	track := analyticsUC.NewTrackUseCase(infra.Analytics, infra.Search, infra.Products)
 	favorites := favoritesUC.NewUseCase(infra.Favorites, infra.Products)
 
-	// handlers
 	productHandler := handler.NewProductHandler(createProduct, updateProduct, deleteProduct, getProduct, listProducts)
 	categoryHandler := handler.NewCategoryHandler(createCategory, getCategory, listCategories, deleteCategory)
 	searchHandler := handler.NewSearchHandler(search, autocomplete, track, favorites)
-	healthHandler := handler.NewHealthHandler()
+	healthHandler := handler.NewHealthHandler(infra.DB)
 
-	srv := apphttp.NewServer(cfg.HTTPAddr, log, apphttp.Deps{
+	srv := apphttp.NewServer(cfg.HTTP, log, infra.Metrics, apphttp.Deps{
 		Products:   productHandler,
 		Categories: categoryHandler,
 		Search:     searchHandler,
 		Health:     healthHandler,
 	})
 
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+	log.Info("server started", "addr", cfg.HTTP.Addr)
 
-	errCh := make(chan error, 1)
-	go func() { errCh <- srv.ListenAndServe() }()
-
-	log.Info("server started", "addr", cfg.HTTPAddr)
+	srvErr := make(chan error, 1)
+	go func() { srvErr <- srv.ListenAndServe() }()
 
 	select {
-	case err := <-errCh:
-		return err
-	case <-stop:
+	case err := <-srvErr:
+		if !errors.Is(err, http.ErrServerClosed) {
+			return err
+		}
+	case <-ctx.Done():
 		log.Info("shutting down")
-		return nil
 	}
+
+	shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Error("http shutdown error", "error", err)
+	}
+	infra.Shutdown(shutdownCtx)
+
+	return nil
 }

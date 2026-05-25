@@ -2,37 +2,52 @@ package metrics
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 )
 
 type Metrics struct {
+	Registry            *prometheus.Registry
 	HTTPRequestsTotal   *prometheus.CounterVec
 	HTTPRequestDuration *prometheus.HistogramVec
-	SearchQueriesTotal  prometheus.Counter
-	ProductViewsTotal   prometheus.Counter
+	OutboundTotal       *prometheus.CounterVec
+	QueueLag            *prometheus.GaugeVec
 }
 
 func New() *Metrics {
+	reg := prometheus.NewRegistry()
+	reg.MustRegister(
+		collectors.NewGoCollector(),
+		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
+	)
+
+	httpTotal := prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "platform_http_requests_total",
+		Help: "Total HTTP requests by method, path, and status",
+	}, []string{"method", "path", "status"})
+
+	httpDuration := prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "platform_http_request_duration_seconds",
+		Help:    "HTTP request latency in seconds",
+		Buckets: []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5},
+	}, []string{"method", "path"})
+
+	outbound := prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "platform_http_outbound_requests_total",
+		Help: "Total outbound HTTP requests by target, method, and status",
+	}, []string{"target", "method", "status"})
+
+	queueLag := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "platform_queue_lag_messages",
+		Help: "Kafka consumer queue lag by topic",
+	}, []string{"topic"})
+
+	reg.MustRegister(httpTotal, httpDuration, outbound, queueLag)
+
 	return &Metrics{
-		HTTPRequestsTotal: promauto.NewCounterVec(prometheus.CounterOpts{
-			Name: "http_requests_total",
-			Help: "Total number of HTTP requests",
-		}, []string{"method", "path", "status"}),
-
-		HTTPRequestDuration: promauto.NewHistogramVec(prometheus.HistogramOpts{
-			Name:    "http_request_duration_seconds",
-			Help:    "HTTP request duration in seconds",
-			Buckets: prometheus.DefBuckets,
-		}, []string{"method", "path"}),
-
-		SearchQueriesTotal: promauto.NewCounter(prometheus.CounterOpts{
-			Name: "search_queries_total",
-			Help: "Total number of search queries",
-		}),
-
-		ProductViewsTotal: promauto.NewCounter(prometheus.CounterOpts{
-			Name: "product_views_total",
-			Help: "Total number of product views",
-		}),
+		Registry:            reg,
+		HTTPRequestsTotal:   httpTotal,
+		HTTPRequestDuration: httpDuration,
+		OutboundTotal:       outbound,
+		QueueLag:            queueLag,
 	}
 }
