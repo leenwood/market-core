@@ -42,6 +42,11 @@ tasks:
     cmds:
       - go run ./cmd/server
 
+  seed:
+    desc: Seed the database with sample categories, products and search queries
+    cmds:
+      - go run ./cmd/seed
+
   run:worker:
     desc: Run async event worker locally (reads .env)
     cmds:
