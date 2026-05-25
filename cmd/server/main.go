@@ -16,7 +16,7 @@ import (
 	"context"
 	"log"
 
-	_ "market-core/swagger"
+	_ "market-core/docs/swagger"
 	"market-core/internal/app/service"
 )
 

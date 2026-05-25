@@ -154,7 +154,7 @@ tasks:
   docs:
     desc: "Regenerate Swagger docs from handler annotations → swagger/"
     cmds:
-      - swag init -g cmd/server/main.go --parseDependency --parseInternal -o swagger
+      - swag init -g cmd/server/main.go --parseDependency --parseInternal -o docs/swagger
 
   # ── Dependencies ──────────────────────────────────────────────────────────
 
