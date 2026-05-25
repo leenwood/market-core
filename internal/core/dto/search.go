@@ -10,7 +10,7 @@ type SearchRequest struct {
 	MaxPrice   *float64       `json:"max_price"`
 	InStock    *bool          `json:"in_stock"`
 	Attributes map[string]any `json:"attributes"`
-	SortBy     string         `json:"sort_by"` // relevance, price, created_at, popularity
+	SortBy     string         `json:"sort_by"`  // relevance, price, created_at, popularity
 	SortDir    string         `json:"sort_dir"` // asc, desc
 	Page       int            `json:"page"`
 	PageSize   int            `json:"page_size"`

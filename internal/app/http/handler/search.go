@@ -4,11 +4,12 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/google/uuid"
 	"market-core/internal/core/dto"
 	analyticsUC "market-core/internal/core/usecase/analytics"
 	favoritesUC "market-core/internal/core/usecase/favorites"
 	searchUC "market-core/internal/core/usecase/search"
+
+	"github.com/google/uuid"
 )
 
 type SearchHandler struct {

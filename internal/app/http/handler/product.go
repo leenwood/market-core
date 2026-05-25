@@ -5,10 +5,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 	"market-core/internal/core/dto"
 	productUC "market-core/internal/core/usecase/product"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 type ProductHandler struct {

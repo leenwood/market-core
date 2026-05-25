@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
 	"market-core/internal/core/port"
+
+	"github.com/google/uuid"
 )
 
 type DeleteUseCase struct {

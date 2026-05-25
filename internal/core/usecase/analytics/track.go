@@ -4,14 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
 	"market-core/internal/core/port"
+
+	"github.com/google/uuid"
 )
 
 type TrackUseCase struct {
-	analytics  port.AnalyticsRepository
-	search     port.SearchRepository
-	products   port.ProductRepository
+	analytics port.AnalyticsRepository
+	search    port.SearchRepository
+	products  port.ProductRepository
 }
 
 func NewTrackUseCase(analytics port.AnalyticsRepository, search port.SearchRepository, products port.ProductRepository) *TrackUseCase {

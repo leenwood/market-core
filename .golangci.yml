@@ -50,7 +50,7 @@ formatters:
   settings:
     goimports:
       local-prefixes:
-        - github.com/leenwood/event-observability-platform
+        - market-core
 
 issues:
   max-issues-per-linter: 50

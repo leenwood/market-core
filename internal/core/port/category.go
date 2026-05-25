@@ -3,8 +3,9 @@ package port
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"market-core/internal/core/domain"
+
+	"github.com/google/uuid"
 )
 
 type CategoryRepository interface {

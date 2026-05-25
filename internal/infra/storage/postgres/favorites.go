@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"time"
 
+	"market-core/internal/core/domain"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"market-core/internal/core/domain"
 )
 
 type FavoritesRepo struct {

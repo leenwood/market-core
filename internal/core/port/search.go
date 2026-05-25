@@ -3,9 +3,10 @@ package port
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"market-core/internal/core/domain"
 	"market-core/internal/core/dto"
+
+	"github.com/google/uuid"
 )
 
 type SearchRepository interface {

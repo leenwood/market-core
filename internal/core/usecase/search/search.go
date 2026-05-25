@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"market-core/internal/core/domain"
 	"market-core/internal/core/dto"
 	"market-core/internal/core/mapper"
 	"market-core/internal/core/port"
+
+	"github.com/google/uuid"
 )
 
 type SearchUseCase struct {

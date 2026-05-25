@@ -4,20 +4,21 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	internal "market-core/internal"
 	"market-core/internal/infra/storage/postgres"
 	"market-core/internal/platform/metrics"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Infra struct {
-	DB        *pgxpool.Pool
-	Products  *postgres.ProductRepo
+	DB         *pgxpool.Pool
+	Products   *postgres.ProductRepo
 	Categories *postgres.CategoryRepo
-	Search    *postgres.SearchRepo
-	Analytics *postgres.AnalyticsRepo
-	Favorites *postgres.FavoritesRepo
-	Metrics   *metrics.Metrics
+	Search     *postgres.SearchRepo
+	Analytics  *postgres.AnalyticsRepo
+	Favorites  *postgres.FavoritesRepo
+	Metrics    *metrics.Metrics
 }
 
 func initInfra(ctx context.Context, cfg *internal.Config) (*Infra, error) {

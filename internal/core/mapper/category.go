@@ -3,9 +3,10 @@ package mapper
 import (
 	"time"
 
-	"github.com/google/uuid"
 	"market-core/internal/core/domain"
 	"market-core/internal/core/dto"
+
+	"github.com/google/uuid"
 )
 
 func CategoryToResponse(c *domain.Category) *dto.CategoryResponse {

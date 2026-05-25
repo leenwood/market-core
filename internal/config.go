@@ -6,10 +6,10 @@ import (
 )
 
 type Config struct {
-	HTTPAddr       string
-	DatabaseDSN    string
-	LogLevel       string
-	MigrationDir   string
+	HTTPAddr     string
+	DatabaseDSN  string
+	LogLevel     string
+	MigrationDir string
 }
 
 func Load() (*Config, error) {

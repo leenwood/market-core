@@ -3,12 +3,13 @@ package http
 import (
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-	chiMiddleware "github.com/go-chi/chi/v5/middleware"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log/slog"
 	"market-core/internal/app/http/handler"
 	"market-core/internal/app/http/middleware"
+
+	"github.com/go-chi/chi/v5"
+	chiMiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Server struct {

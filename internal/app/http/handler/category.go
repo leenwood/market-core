@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
 	"market-core/internal/core/dto"
 	categoryUC "market-core/internal/core/usecase/category"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type CategoryHandler struct {
