@@ -1,0 +1,727 @@
+basePath: /api/v1
+definitions:
+  internal_app_http_handler.ErrorResponse:
+    properties:
+      error:
+        example: not found
+        type: string
+    type: object
+  market-core_internal_core_dto.AutocompleteResponse:
+    properties:
+      suggestions:
+        items:
+          type: string
+        type: array
+    type: object
+  market-core_internal_core_dto.CategoryResponse:
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/market-core_internal_core_dto.CategoryResponse'
+        type: array
+      created_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      parent_id:
+        type: string
+      slug:
+        type: string
+      sort_order:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  market-core_internal_core_dto.CreateCategoryRequest:
+    properties:
+      name:
+        maxLength: 255
+        minLength: 1
+        type: string
+      parent_id:
+        type: string
+      slug:
+        maxLength: 255
+        minLength: 1
+        type: string
+      sort_order:
+        type: integer
+    required:
+    - name
+    - slug
+    type: object
+  market-core_internal_core_dto.CreateProductRequest:
+    properties:
+      attributes:
+        additionalProperties: {}
+        type: object
+      brand:
+        type: string
+      category_id:
+        type: string
+      description:
+        type: string
+      in_stock:
+        type: boolean
+      name:
+        maxLength: 500
+        minLength: 1
+        type: string
+      price:
+        minimum: 0
+        type: number
+    required:
+    - category_id
+    - name
+    type: object
+  market-core_internal_core_dto.PopularQueryResponse:
+    properties:
+      count:
+        type: integer
+      query:
+        type: string
+    type: object
+  market-core_internal_core_dto.ProductListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/market-core_internal_core_dto.ProductResponse'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  market-core_internal_core_dto.ProductResponse:
+    properties:
+      attributes:
+        additionalProperties: {}
+        type: object
+      brand:
+        type: string
+      category_id:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      in_stock:
+        type: boolean
+      name:
+        type: string
+      price:
+        type: number
+      rating:
+        type: number
+      rating_count:
+        type: integer
+      updated_at:
+        type: string
+      view_count:
+        type: integer
+    type: object
+  market-core_internal_core_dto.SearchResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/market-core_internal_core_dto.ProductResponse'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      query_id:
+        type: string
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  market-core_internal_core_dto.UpdateProductRequest:
+    properties:
+      attributes:
+        additionalProperties: {}
+        type: object
+      brand:
+        type: string
+      category_id:
+        type: string
+      description:
+        type: string
+      in_stock:
+        type: boolean
+      name:
+        maxLength: 500
+        minLength: 1
+        type: string
+      price:
+        minimum: 0
+        type: number
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: george200135@gmail.com
+    name: leenwood
+  description: 'Product catalog microservice: full-text search, filtering, categories,
+    analytics, favorites.'
+  title: market-core API
+  version: "1.0"
+paths:
+  /analytics/popular-products:
+    get:
+      description: Return the most viewed products sorted by view count descending
+      parameters:
+      - description: Number of results (default 10, max 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/market-core_internal_core_dto.ProductResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+      summary: Popular products
+      tags:
+      - analytics
+  /analytics/popular-queries:
+    get:
+      description: Return the most frequent search queries over the last 30 days
+      parameters:
+      - description: Number of results (default 10, max 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/market-core_internal_core_dto.PopularQueryResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+      summary: Popular search queries
+      tags:
+      - analytics
+  /categories:
+    get:
+      description: Return the full category tree (root nodes with nested children)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/market-core_internal_core_dto.CategoryResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+      summary: List categories
+      tags:
+      - categories
+    post:
+      consumes:
+      - application/json
+      description: Create a new category; set parent_id to nest it in the hierarchy
+      parameters:
+      - description: Category data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/market-core_internal_core_dto.CreateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/market-core_internal_core_dto.CategoryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+        "404":
+          description: Parent category not found
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+        "409":
+          description: Slug already taken
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+      summary: Create category
+      tags:
+      - categories
+  /categories/{id}:
+    delete:
+      description: Delete a category by ID. Child categories will have their parent_id
+        set to NULL.
+      parameters:
+      - description: Category ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+      summary: Delete category
+      tags:
+      - categories
+    get:
+      description: Return a single category by ID
+      parameters:
+      - description: Category ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/market-core_internal_core_dto.CategoryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+      summary: Get category
+      tags:
+      - categories
+  /favorites:
+    delete:
+      description: Remove a product from the authenticated user's favorites list
+      parameters:
+      - description: User ID (UUID)
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Product ID (UUID)
+        in: query
+        name: product_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+      summary: Remove from favorites
+      tags:
+      - favorites
+    get:
+      description: Return a paginated list of the user's favorite products
+      parameters:
+      - description: User ID (UUID)
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 20, max 100)
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/market-core_internal_core_dto.ProductListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+      summary: List favorites
+      tags:
+      - favorites
+    post:
+      description: Add a product to the authenticated user's favorites list
+      parameters:
+      - description: User ID (UUID)
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Product ID (UUID)
+        in: query
+        name: product_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+        "404":
+          description: Product not found
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+      summary: Add to favorites
+      tags:
+      - favorites
+  /products:
+    get:
+      description: Return a paginated list of products with optional filters
+      parameters:
+      - description: Filter by category UUID
+        in: query
+        name: category_id
+        type: string
+      - description: Include descendant subcategories
+        in: query
+        name: include_subcategory
+        type: boolean
+      - description: Filter by brand (partial match)
+        in: query
+        name: brand
+        type: string
+      - description: Minimum price
+        in: query
+        name: min_price
+        type: number
+      - description: Maximum price
+        in: query
+        name: max_price
+        type: number
+      - description: Filter by stock availability
+        in: query
+        name: in_stock
+        type: boolean
+      - description: 'Sort field: price | created_at | popularity | rating'
+        in: query
+        name: sort_by
+        type: string
+      - description: 'Sort direction: asc | desc'
+        in: query
+        name: sort_dir
+        type: string
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 20, max 100)
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/market-core_internal_core_dto.ProductListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+      summary: List products
+      tags:
+      - products
+    post:
+      consumes:
+      - application/json
+      description: Add a new product to the catalog
+      parameters:
+      - description: Product data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/market-core_internal_core_dto.CreateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/market-core_internal_core_dto.ProductResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+        "404":
+          description: Category not found
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+      summary: Create product
+      tags:
+      - products
+  /products/{id}:
+    delete:
+      description: Soft-delete a product by ID
+      parameters:
+      - description: Product ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+      summary: Delete product
+      tags:
+      - products
+    get:
+      description: Return a single product by ID and increment its view counter
+      parameters:
+      - description: Product ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/market-core_internal_core_dto.ProductResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+      summary: Get product
+      tags:
+      - products
+    put:
+      consumes:
+      - application/json
+      description: Update fields of an existing product (partial update)
+      parameters:
+      - description: Product ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Fields to update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/market-core_internal_core_dto.UpdateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/market-core_internal_core_dto.ProductResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+      summary: Update product
+      tags:
+      - products
+  /search:
+    get:
+      description: |-
+        Full-text search combined with SQL filters. Supports fuzzy matching via trigram similarity.
+        Results are ranked by: ts_rank_cd × 0.7 + word_similarity × 0.3.
+        Pass X-User-ID header to record search history.
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        type: string
+      - description: Filter by category UUID (includes subcategories)
+        in: query
+        name: category_id
+        type: string
+      - description: Filter by brand (partial match)
+        in: query
+        name: brand
+        type: string
+      - description: Minimum price
+        in: query
+        name: min_price
+        type: number
+      - description: Maximum price
+        in: query
+        name: max_price
+        type: number
+      - description: Filter by stock availability
+        in: query
+        name: in_stock
+        type: boolean
+      - description: relevance | price | created_at | popularity
+        in: query
+        name: sort_by
+        type: string
+      - description: asc | desc
+        in: query
+        name: sort_dir
+        type: string
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 20, max 100)
+        in: query
+        name: page_size
+        type: integer
+      - description: User ID for search history recording
+        in: header
+        name: X-User-ID
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/market-core_internal_core_dto.SearchResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+      summary: Search products
+      tags:
+      - search
+  /search/autocomplete:
+    get:
+      description: Return up to `limit` suggestions matching the given prefix from
+        product names and past queries
+      parameters:
+      - description: Prefix string
+        in: query
+        name: q
+        required: true
+        type: string
+      - description: Max suggestions (default 10, max 20)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/market-core_internal_core_dto.AutocompleteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_app_http_handler.ErrorResponse'
+      summary: Search autocomplete
+      tags:
+      - search
+schemes:
+- http
+swagger: "2.0"

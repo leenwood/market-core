@@ -8,6 +8,11 @@ import (
 	"market-core/internal/core/domain"
 )
 
+// ErrorResponse is the standard error envelope returned on all 4xx/5xx responses.
+type ErrorResponse struct {
+	Error string `json:"error" example:"not found"`
+}
+
 type envelope struct {
 	Data  any    `json:"data,omitempty"`
 	Error string `json:"error,omitempty"`

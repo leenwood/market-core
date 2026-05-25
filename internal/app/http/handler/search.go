@@ -33,6 +33,27 @@ func NewSearchHandler(
 	}
 }
 
+// Search godoc
+// @Summary      Search products
+// @Description  Full-text search combined with SQL filters. Supports fuzzy matching via trigram similarity.
+// @Description  Results are ranked by: ts_rank_cd × 0.7 + word_similarity × 0.3.
+// @Description  Pass X-User-ID header to record search history.
+// @Tags         search
+// @Produce      json
+// @Param        q            query   string  false  "Search query"
+// @Param        category_id  query   string  false  "Filter by category UUID (includes subcategories)"
+// @Param        brand        query   string  false  "Filter by brand (partial match)"
+// @Param        min_price    query   number  false  "Minimum price"
+// @Param        max_price    query   number  false  "Maximum price"
+// @Param        in_stock     query   bool    false  "Filter by stock availability"
+// @Param        sort_by      query   string  false  "relevance | price | created_at | popularity"
+// @Param        sort_dir     query   string  false  "asc | desc"
+// @Param        page         query   int     false  "Page number (default 1)"
+// @Param        page_size    query   int     false  "Items per page (default 20, max 100)"
+// @Param        X-User-ID    header  string  false  "User ID for search history recording"
+// @Success      200  {object}  dto.SearchResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /search [get]
 func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 	req := dto.SearchRequest{
 		Query:    r.URL.Query().Get("q"),
@@ -78,6 +99,17 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, resp)
 }
 
+// Autocomplete godoc
+// @Summary      Search autocomplete
+// @Description  Return up to `limit` suggestions matching the given prefix from product names and past queries
+// @Tags         search
+// @Produce      json
+// @Param        q      query  string  true   "Prefix string"
+// @Param        limit  query  int     false  "Max suggestions (default 10, max 20)"
+// @Success      200  {object}  dto.AutocompleteResponse
+// @Failure      400  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /search/autocomplete [get]
 func (h *SearchHandler) Autocomplete(w http.ResponseWriter, r *http.Request) {
 	prefix := r.URL.Query().Get("q")
 	if prefix == "" {
@@ -98,6 +130,15 @@ func (h *SearchHandler) Autocomplete(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, resp)
 }
 
+// PopularQueries godoc
+// @Summary      Popular search queries
+// @Description  Return the most frequent search queries over the last 30 days
+// @Tags         analytics
+// @Produce      json
+// @Param        limit  query  int  false  "Number of results (default 10, max 100)"
+// @Success      200  {array}   dto.PopularQueryResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /analytics/popular-queries [get]
 func (h *SearchHandler) PopularQueries(w http.ResponseWriter, r *http.Request) {
 	limit := parseIntParam(r, "limit", 10)
 	queries, err := h.analytics.GetPopularQueries(r.Context(), limit)
@@ -108,6 +149,15 @@ func (h *SearchHandler) PopularQueries(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, queries)
 }
 
+// PopularProducts godoc
+// @Summary      Popular products
+// @Description  Return the most viewed products sorted by view count descending
+// @Tags         analytics
+// @Produce      json
+// @Param        limit  query  int  false  "Number of results (default 10, max 100)"
+// @Success      200  {array}   dto.ProductResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /analytics/popular-products [get]
 func (h *SearchHandler) PopularProducts(w http.ResponseWriter, r *http.Request) {
 	limit := parseIntParam(r, "limit", 10)
 	products, err := h.analytics.GetPopularProducts(r.Context(), limit)
@@ -118,6 +168,18 @@ func (h *SearchHandler) PopularProducts(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, http.StatusOK, products)
 }
 
+// AddFavorite godoc
+// @Summary      Add to favorites
+// @Description  Add a product to the authenticated user's favorites list
+// @Tags         favorites
+// @Produce      json
+// @Param        X-User-ID   header  string  true  "User ID (UUID)"
+// @Param        product_id  query   string  true  "Product ID (UUID)"
+// @Success      204  "No Content"
+// @Failure      400  {object}  ErrorResponse
+// @Failure      404  {object}  ErrorResponse  "Product not found"
+// @Failure      500  {object}  ErrorResponse
+// @Router       /favorites [post]
 func (h *SearchHandler) AddFavorite(w http.ResponseWriter, r *http.Request) {
 	userID, err := requireUserID(r)
 	if err != nil {
@@ -136,6 +198,17 @@ func (h *SearchHandler) AddFavorite(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// RemoveFavorite godoc
+// @Summary      Remove from favorites
+// @Description  Remove a product from the authenticated user's favorites list
+// @Tags         favorites
+// @Produce      json
+// @Param        X-User-ID   header  string  true  "User ID (UUID)"
+// @Param        product_id  query   string  true  "Product ID (UUID)"
+// @Success      204  "No Content"
+// @Failure      400  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /favorites [delete]
 func (h *SearchHandler) RemoveFavorite(w http.ResponseWriter, r *http.Request) {
 	userID, err := requireUserID(r)
 	if err != nil {
@@ -154,6 +227,18 @@ func (h *SearchHandler) RemoveFavorite(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// ListFavorites godoc
+// @Summary      List favorites
+// @Description  Return a paginated list of the user's favorite products
+// @Tags         favorites
+// @Produce      json
+// @Param        X-User-ID  header  string  true   "User ID (UUID)"
+// @Param        page       query   int     false  "Page number (default 1)"
+// @Param        page_size  query   int     false  "Items per page (default 20, max 100)"
+// @Success      200  {object}  dto.ProductListResponse
+// @Failure      400  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /favorites [get]
 func (h *SearchHandler) ListFavorites(w http.ResponseWriter, r *http.Request) {
 	userID, err := requireUserID(r)
 	if err != nil {

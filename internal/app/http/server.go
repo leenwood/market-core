@@ -1,15 +1,16 @@
 package http
 
 import (
+	"log/slog"
 	"net/http"
 
-	"log/slog"
 	"market-core/internal/app/http/handler"
 	"market-core/internal/app/http/middleware"
 
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
 type Server struct {
@@ -34,6 +35,9 @@ func NewServer(addr string, log *slog.Logger, deps Deps) *Server {
 
 	r.Get("/health", deps.Health.Health)
 	r.Handle("/metrics", promhttp.Handler())
+	r.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"),
+	))
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Route("/products", func(r chi.Router) {

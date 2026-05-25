@@ -26,6 +26,19 @@ func NewCategoryHandler(
 	return &CategoryHandler{create: create, get: get, list: list, delete: del}
 }
 
+// Create godoc
+// @Summary      Create category
+// @Description  Create a new category; set parent_id to nest it in the hierarchy
+// @Tags         categories
+// @Accept       json
+// @Produce      json
+// @Param        request  body      dto.CreateCategoryRequest  true  "Category data"
+// @Success      201      {object}  dto.CategoryResponse
+// @Failure      400      {object}  ErrorResponse
+// @Failure      404      {object}  ErrorResponse  "Parent category not found"
+// @Failure      409      {object}  ErrorResponse  "Slug already taken"
+// @Failure      500      {object}  ErrorResponse
+// @Router       /categories [post]
 func (h *CategoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateCategoryRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -41,6 +54,17 @@ func (h *CategoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, resp)
 }
 
+// Get godoc
+// @Summary      Get category
+// @Description  Return a single category by ID
+// @Tags         categories
+// @Produce      json
+// @Param        id  path      string  true  "Category ID (UUID)"
+// @Success      200  {object}  dto.CategoryResponse
+// @Failure      400  {object}  ErrorResponse
+// @Failure      404  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /categories/{id} [get]
 func (h *CategoryHandler) Get(w http.ResponseWriter, r *http.Request) {
 	id, err := parseUUID(chi.URLParam(r, "id"))
 	if err != nil {
@@ -56,6 +80,14 @@ func (h *CategoryHandler) Get(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, resp)
 }
 
+// List godoc
+// @Summary      List categories
+// @Description  Return the full category tree (root nodes with nested children)
+// @Tags         categories
+// @Produce      json
+// @Success      200  {array}   dto.CategoryResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /categories [get]
 func (h *CategoryHandler) List(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.list.Execute(r.Context())
 	if err != nil {
@@ -65,6 +97,17 @@ func (h *CategoryHandler) List(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, resp)
 }
 
+// Delete godoc
+// @Summary      Delete category
+// @Description  Delete a category by ID. Child categories will have their parent_id set to NULL.
+// @Tags         categories
+// @Produce      json
+// @Param        id  path  string  true  "Category ID (UUID)"
+// @Success      204  "No Content"
+// @Failure      400  {object}  ErrorResponse
+// @Failure      404  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /categories/{id} [delete]
 func (h *CategoryHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	id, err := parseUUID(chi.URLParam(r, "id"))
 	if err != nil {

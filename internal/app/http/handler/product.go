@@ -30,6 +30,18 @@ func NewProductHandler(
 	return &ProductHandler{create: create, update: update, delete: del, get: get, list: list}
 }
 
+// Create godoc
+// @Summary      Create product
+// @Description  Add a new product to the catalog
+// @Tags         products
+// @Accept       json
+// @Produce      json
+// @Param        request  body      dto.CreateProductRequest  true  "Product data"
+// @Success      201      {object}  dto.ProductResponse
+// @Failure      400      {object}  ErrorResponse
+// @Failure      404      {object}  ErrorResponse  "Category not found"
+// @Failure      500      {object}  ErrorResponse
+// @Router       /products [post]
 func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateProductRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -45,6 +57,19 @@ func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, resp)
 }
 
+// Update godoc
+// @Summary      Update product
+// @Description  Update fields of an existing product (partial update)
+// @Tags         products
+// @Accept       json
+// @Produce      json
+// @Param        id       path      string                    true  "Product ID (UUID)"
+// @Param        request  body      dto.UpdateProductRequest  true  "Fields to update"
+// @Success      200      {object}  dto.ProductResponse
+// @Failure      400      {object}  ErrorResponse
+// @Failure      404      {object}  ErrorResponse
+// @Failure      500      {object}  ErrorResponse
+// @Router       /products/{id} [put]
 func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 	id, err := parseUUID(chi.URLParam(r, "id"))
 	if err != nil {
@@ -66,6 +91,17 @@ func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, resp)
 }
 
+// Delete godoc
+// @Summary      Delete product
+// @Description  Soft-delete a product by ID
+// @Tags         products
+// @Produce      json
+// @Param        id  path  string  true  "Product ID (UUID)"
+// @Success      204  "No Content"
+// @Failure      400  {object}  ErrorResponse
+// @Failure      404  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /products/{id} [delete]
 func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	id, err := parseUUID(chi.URLParam(r, "id"))
 	if err != nil {
@@ -80,6 +116,17 @@ func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// Get godoc
+// @Summary      Get product
+// @Description  Return a single product by ID and increment its view counter
+// @Tags         products
+// @Produce      json
+// @Param        id  path      string  true  "Product ID (UUID)"
+// @Success      200  {object}  dto.ProductResponse
+// @Failure      400  {object}  ErrorResponse
+// @Failure      404  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /products/{id} [get]
 func (h *ProductHandler) Get(w http.ResponseWriter, r *http.Request) {
 	id, err := parseUUID(chi.URLParam(r, "id"))
 	if err != nil {
@@ -95,6 +142,24 @@ func (h *ProductHandler) Get(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, resp)
 }
 
+// List godoc
+// @Summary      List products
+// @Description  Return a paginated list of products with optional filters
+// @Tags         products
+// @Produce      json
+// @Param        category_id          query  string  false  "Filter by category UUID"
+// @Param        include_subcategory  query  bool    false  "Include descendant subcategories"
+// @Param        brand                query  string  false  "Filter by brand (partial match)"
+// @Param        min_price            query  number  false  "Minimum price"
+// @Param        max_price            query  number  false  "Maximum price"
+// @Param        in_stock             query  bool    false  "Filter by stock availability"
+// @Param        sort_by              query  string  false  "Sort field: price | created_at | popularity | rating"
+// @Param        sort_dir             query  string  false  "Sort direction: asc | desc"
+// @Param        page                 query  int     false  "Page number (default 1)"
+// @Param        page_size            query  int     false  "Items per page (default 20, max 100)"
+// @Success      200  {object}  dto.ProductListResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /products [get]
 func (h *ProductHandler) List(w http.ResponseWriter, r *http.Request) {
 	filter := dto.ProductFilter{
 		Page:     parseIntParam(r, "page", 1),
