@@ -11,41 +11,26 @@ excludeFiles:
 
 # ── Components ────────────────────────────────────────────────────────────────
 #
-# Структура internal/:
-#   internal/config/       — конфигурация приложения (общий слой)
-#   internal/core/         — бизнес-ядро: domain, port, dto, service, mapper, usecase
-#   internal/infra/        — инфраструктура: storage, messaging, outbound
-#   internal/platform/     — cross-cutting: logger, metrics, tracing
-#   internal/app/          — прикладной код: хендлеры, воркеры, миграции
-#
-# Layer 0 — Foundation (нет зависимостей на внутренние пакеты)
-#   internal/config
-#   internal/core/domain
-#   internal/core/dto
+# Layer 0 — Foundation (no internal deps)
+#   internal/           — config
+#   internal/core/domain, internal/core/dto
 #   internal/platform/{logger,metrics,tracing}
 #
-# Layer 1a — Contracts (зависит от Foundation)
-#   internal/core/port      (интерфейсы: зависит от domain, dto)
-#   internal/core/service   (переиспользуемая бизнес-логика: зависит от dto)
-#   internal/core/mapper    (преобразования DTO: зависит от dto)
+# Layer 1a — Contracts (→ Foundation)
+#   internal/core/port, internal/core/mapper
 #
-# Layer 1b — Infrastructure (зависит от Foundation + Contracts)
-#   internal/infra/storage/memory    (MemoryStore: зависит от dto)
-#   internal/infra/storage/{postgres,clickhouse}
-#   internal/infra/messaging
-#   internal/infra/outbound/{httpclient,notifier}
+# Layer 1b — Infrastructure (→ Foundation + Contracts)
+#   internal/infra/storage/postgres
+#   internal/infra/outbound/httpclient
 #
-# Layer 2a — Use Cases (зависит от Foundation + Contracts)
+# Layer 2a — Use Cases (→ Foundation + Contracts)
 #   internal/core/usecase
 #
-# Layer 2b — Application (зависит от Foundation + Contracts + Use Cases + Infrastructure)
-#   internal/app/http/{handler,middleware}
-#   internal/app/processor
+# Layer 2b — Application (→ all layers)
+#   internal/app/http, internal/app/http/middleware, internal/app/http/handler
 #
-# Bootstrap (internal/app/service, internal/app/migrate) — собирают всё вместе,
-# вызываются из cmd/; зависимости не ограничены.
-#
-# Entrypoints (cmd/*) — точки входа, ограничения не применяются.
+# Bootstrap — internal/app/service, internal/app/migrate (no restrictions)
+# Entrypoints — cmd/server, cmd/migrate (no restrictions)
 
 components:
 
@@ -66,50 +51,36 @@ components:
   # Layer 1a — Contracts
   Port:
     in: internal/core/port
-  Service:
-    in: internal/core/service
   Mapper:
     in: internal/core/mapper
 
-  # Layer 1b — Infrastructure (internal/infra/)
-  Idempotency:
-    in: internal/infra/storage/memory
+  # Layer 1b — Infrastructure
   PostgresStorage:
     in: internal/infra/storage/postgres
-  ClickHouseStorage:
-    in: internal/infra/storage/clickhouse
-  Messaging:
-    in: internal/infra/messaging
   HTTPClient:
     in: internal/infra/outbound/httpclient
-  Notifier:
-    in: internal/infra/outbound/notifier
 
   # Layer 2a — Use Cases
   UseCase:
-    in: internal/core/usecase
+    in: internal/core/usecase/**
 
-  # Layer 2b — Application (internal/app/)
+  # Layer 2b — Application
   AppHTTP:
     in: internal/app/http
   Middleware:
     in: internal/app/http/middleware
   Handler:
     in: internal/app/http/handler
-  Processor:
-    in: internal/app/processor
 
-  # Bootstrap — собирают зависимости и запускают приложение; вызываются из cmd/
+  # Bootstrap
   AppService:
     in: internal/app/service
   Migrate:
     in: internal/app/migrate
 
-  # Entrypoints — только точки входа, без ограничений на зависимости
+  # Entrypoints
   ServerCmd:
     in: cmd/server
-  WorkerCmd:
-    in: cmd/worker
   MigrateCmd:
     in: cmd/migrate
 
@@ -120,7 +91,7 @@ components:
 # ── Dependency rules ──────────────────────────────────────────────────────────
 deps:
 
-  # Layer 0 — Foundation: без внутренних зависимостей
+  # Layer 0 — Foundation: no internal dependencies
   Domain:
     anyVendorDeps: true
   Dto:
@@ -140,35 +111,16 @@ deps:
       - Domain
       - Dto
 
-  Service:
-    mayDependOn:
-      - Dto
-
   Mapper:
     mayDependOn:
+      - Domain
       - Dto
 
   # Layer 1b — Infrastructure
-  Idempotency:
-    mayDependOn:
-      - Dto
-
   PostgresStorage:
     mayDependOn:
       - Domain
       - Dto
-      - Logger
-      - Tracing
-
-  ClickHouseStorage:
-    mayDependOn:
-      - Domain
-      - Dto
-      - Logger
-      - Tracing
-
-  Messaging:
-    mayDependOn:
       - Logger
       - Tracing
 
@@ -177,11 +129,6 @@ deps:
       - Metrics
       - Logger
       - Tracing
-
-  Notifier:
-    mayDependOn:
-      - HTTPClient
-      - Logger
 
   # Layer 2a — Use Cases
   UseCase:
@@ -195,6 +142,7 @@ deps:
   # Layer 2b — Application
   AppHTTP:
     mayDependOn:
+      - Config
       - Domain
       - Dto
       - Port
@@ -216,25 +164,12 @@ deps:
       - Domain
       - Dto
       - Port
-      - Service
       - UseCase
       - Metrics
       - Logger
       - Tracing
 
-  Processor:
-    mayDependOn:
-      - Domain
-      - Dto
-      - Port
-      - Mapper
-      - UseCase
-      - Messaging
-      - Metrics
-      - Logger
-      - Tracing
-
-  # Bootstrap + Entrypoints: зависимости не ограничены
+  # Bootstrap + Entrypoints: unrestricted
   AppService:
     anyProjectDeps: true
     anyVendorDeps: true
@@ -248,8 +183,5 @@ deps:
     anyProjectDeps: true
     anyVendorDeps: true
   ServerCmd:
-    anyProjectDeps: true
-    anyVendorDeps: true
-  WorkerCmd:
     anyProjectDeps: true
     anyVendorDeps: true
