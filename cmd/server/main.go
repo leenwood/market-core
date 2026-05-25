@@ -9,7 +9,7 @@
 //
 // @host      localhost:8080
 // @BasePath  /api/v1
-// @schemes   http
+// @schemes   http.
 package main
 
 import (

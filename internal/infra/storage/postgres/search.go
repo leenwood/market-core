@@ -188,7 +188,7 @@ func (r *SearchRepo) RecordQuery(ctx context.Context, q *domain.SearchQuery) err
 		q.ID, q.UserID, q.Query, q.ResultsCount, q.CreatedAt,
 	)
 	if err == nil && q.UserID != nil {
-		r.db.Exec(ctx, `
+		_, _ = r.db.Exec(ctx, `
 			INSERT INTO search_history (id, user_id, query, created_at)
 			VALUES ($1, $2, $3, $4)`,
 			uuid.New(), *q.UserID, q.Query, time.Now(),

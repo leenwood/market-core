@@ -25,7 +25,7 @@ func (uc *GetUseCase) Execute(ctx context.Context, id uuid.UUID) (*dto.ProductRe
 		return nil, fmt.Errorf("get product: %w", err)
 	}
 
-	go uc.products.IncrementViewCount(context.Background(), id) //nolint:errcheck
+	go uc.products.IncrementViewCount(context.WithoutCancel(ctx), id) //nolint:errcheck
 
 	return mapper.ProductToResponse(p), nil
 }

@@ -40,7 +40,7 @@ func NewProductHandler(
 // @Failure      400      {object}  ErrorResponse
 // @Failure      404      {object}  ErrorResponse  "Category not found"
 // @Failure      500      {object}  ErrorResponse
-// @Router       /products [post]
+// @Router       /products [post].
 func (h *ProductHandler) Create(c *gin.Context) {
 	var req dto.CreateProductRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -68,7 +68,7 @@ func (h *ProductHandler) Create(c *gin.Context) {
 // @Failure      400      {object}  ErrorResponse
 // @Failure      404      {object}  ErrorResponse
 // @Failure      500      {object}  ErrorResponse
-// @Router       /products/{id} [put]
+// @Router       /products/{id} [put].
 func (h *ProductHandler) Update(c *gin.Context) {
 	id, err := parseUUID(c.Param("id"))
 	if err != nil {
@@ -100,7 +100,7 @@ func (h *ProductHandler) Update(c *gin.Context) {
 // @Failure      400  {object}  ErrorResponse
 // @Failure      404  {object}  ErrorResponse
 // @Failure      500  {object}  ErrorResponse
-// @Router       /products/{id} [delete]
+// @Router       /products/{id} [delete].
 func (h *ProductHandler) Delete(c *gin.Context) {
 	id, err := parseUUID(c.Param("id"))
 	if err != nil {
@@ -125,7 +125,7 @@ func (h *ProductHandler) Delete(c *gin.Context) {
 // @Failure      400  {object}  ErrorResponse
 // @Failure      404  {object}  ErrorResponse
 // @Failure      500  {object}  ErrorResponse
-// @Router       /products/{id} [get]
+// @Router       /products/{id} [get].
 func (h *ProductHandler) Get(c *gin.Context) {
 	id, err := parseUUID(c.Param("id"))
 	if err != nil {
@@ -158,7 +158,7 @@ func (h *ProductHandler) Get(c *gin.Context) {
 // @Param        page_size            query  int     false  "Items per page (default 20, max 100)"
 // @Success      200  {object}  dto.ProductListResponse
 // @Failure      500  {object}  ErrorResponse
-// @Router       /products [get]
+// @Router       /products [get].
 func (h *ProductHandler) List(c *gin.Context) {
 	filter := dto.ProductFilter{
 		Page:     parseIntParam(c, "page", 1),

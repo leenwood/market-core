@@ -85,6 +85,7 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
+//nolint:unused
 func getEnvInt(key string, fallback int) int {
 	if v := os.Getenv(key); v != "" {
 		if i, err := strconv.Atoi(v); err == nil {
@@ -112,6 +113,7 @@ func getEnvDuration(key string, fallback time.Duration) time.Duration {
 	return fallback
 }
 
+//nolint:unused
 func getEnvStringSlice(key string, fallback []string) []string {
 	if v := os.Getenv(key); v != "" {
 		return strings.Split(v, ",")

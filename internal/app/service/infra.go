@@ -41,12 +41,12 @@ func initInfra(ctx context.Context, cfg *internal.Config) (*Infra, error) {
 
 	db, err := pgxpool.New(initCtx, cfg.Postgres.DSN)
 	if err != nil {
-		_ = shutdownTracing(context.Background())
+		_ = shutdownTracing(initCtx) //nolint:contextcheck
 		return nil, fmt.Errorf("connect to postgres: %w", err)
 	}
 	if err := db.Ping(initCtx); err != nil {
 		db.Close()
-		_ = shutdownTracing(context.Background())
+		_ = shutdownTracing(initCtx) //nolint:contextcheck
 		return nil, fmt.Errorf("ping postgres: %w", err)
 	}
 

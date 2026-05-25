@@ -23,16 +23,16 @@ import (
 )
 
 const (
-	defaultMaxRetries    = 3
-	defaultOpenTimeout   = 30 * time.Second
-	defaultMaxFailures   = 5
+	defaultMaxRetries     = 3
+	defaultOpenTimeout    = 30 * time.Second
+	defaultMaxFailures    = 5
 	defaultHalfOpenProbes = 2
 )
 
 type cbState int
 
 const (
-	stateClosed   cbState = iota
+	stateClosed cbState = iota
 	stateOpen
 	stateHalfOpen
 )
@@ -97,6 +97,8 @@ func (cb *circuitBreaker) record(success bool) {
 			cb.openedAt = time.Now()
 			cb.log.Warn("circuit breaker open from half-open")
 		}
+	case stateOpen:
+		// no-op: transitions out of Open are handled by allow()
 	}
 }
 
@@ -209,7 +211,7 @@ func (c *Client) doOnce(ctx context.Context, method, path string, body []byte) (
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -233,5 +235,5 @@ func jitterBackoff(attempt int) time.Duration {
 	if exp > cap {
 		exp = cap
 	}
-	return time.Duration(rand.Int64N(int64(exp)))
+	return time.Duration(rand.Int64N(int64(exp))) //nolint:gosec
 }

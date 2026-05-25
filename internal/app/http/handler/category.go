@@ -37,7 +37,7 @@ func NewCategoryHandler(
 // @Failure      404      {object}  ErrorResponse  "Parent category not found"
 // @Failure      409      {object}  ErrorResponse  "Slug already taken"
 // @Failure      500      {object}  ErrorResponse
-// @Router       /categories [post]
+// @Router       /categories [post].
 func (h *CategoryHandler) Create(c *gin.Context) {
 	var req dto.CreateCategoryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -63,7 +63,7 @@ func (h *CategoryHandler) Create(c *gin.Context) {
 // @Failure      400  {object}  ErrorResponse
 // @Failure      404  {object}  ErrorResponse
 // @Failure      500  {object}  ErrorResponse
-// @Router       /categories/{id} [get]
+// @Router       /categories/{id} [get].
 func (h *CategoryHandler) Get(c *gin.Context) {
 	id, err := parseUUID(c.Param("id"))
 	if err != nil {
@@ -86,7 +86,7 @@ func (h *CategoryHandler) Get(c *gin.Context) {
 // @Produce      json
 // @Success      200  {array}   dto.CategoryResponse
 // @Failure      500  {object}  ErrorResponse
-// @Router       /categories [get]
+// @Router       /categories [get].
 func (h *CategoryHandler) List(c *gin.Context) {
 	resp, err := h.list.Execute(c.Request.Context())
 	if err != nil {
@@ -106,7 +106,7 @@ func (h *CategoryHandler) List(c *gin.Context) {
 // @Failure      400  {object}  ErrorResponse
 // @Failure      404  {object}  ErrorResponse
 // @Failure      500  {object}  ErrorResponse
-// @Router       /categories/{id} [delete]
+// @Router       /categories/{id} [delete].
 func (h *CategoryHandler) Delete(c *gin.Context) {
 	id, err := parseUUID(c.Param("id"))
 	if err != nil {

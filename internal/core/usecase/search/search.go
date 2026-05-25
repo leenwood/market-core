@@ -59,20 +59,20 @@ func (uc *SearchUseCase) Execute(ctx context.Context, req dto.SearchRequest) (*d
 			ResultsCount: int(total),
 			CreatedAt:    time.Now(),
 		}
-		go uc.search.RecordQuery(context.Background(), q) //nolint:errcheck
+		go uc.search.RecordQuery(context.WithoutCancel(ctx), q) //nolint:errcheck
 
 		qid := q.ID.String()
 		resp.QueryID = &qid
 
 		if req.UserID != nil {
-			go uc.recordHistory(context.Background(), *req.UserID, req.Query) //nolint:errcheck
+			go uc.recordHistory(*req.UserID, req.Query)
 		}
 	}
 
 	return resp, nil
 }
 
-func (uc *SearchUseCase) recordHistory(ctx context.Context, userID uuid.UUID, query string) {
+func (uc *SearchUseCase) recordHistory(userID uuid.UUID, query string) {
 	// Reuse RecordQuery flow; history stored separately in the repo
 	h := &domain.SearchHistory{
 		ID:        uuid.New(),

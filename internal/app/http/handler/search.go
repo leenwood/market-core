@@ -54,7 +54,7 @@ func NewSearchHandler(
 // @Param        X-User-ID    header  string  false  "User ID for search history recording"
 // @Success      200  {object}  dto.SearchResponse
 // @Failure      500  {object}  ErrorResponse
-// @Router       /search [get]
+// @Router       /search [get].
 func (h *SearchHandler) Search(c *gin.Context) {
 	req := dto.SearchRequest{
 		Query:    c.Query("q"),
@@ -110,7 +110,7 @@ func (h *SearchHandler) Search(c *gin.Context) {
 // @Success      200  {object}  dto.AutocompleteResponse
 // @Failure      400  {object}  ErrorResponse
 // @Failure      500  {object}  ErrorResponse
-// @Router       /search/autocomplete [get]
+// @Router       /search/autocomplete [get].
 func (h *SearchHandler) Autocomplete(c *gin.Context) {
 	prefix := c.Query("q")
 	if prefix == "" {
@@ -139,7 +139,7 @@ func (h *SearchHandler) Autocomplete(c *gin.Context) {
 // @Param        limit  query  int  false  "Number of results (default 10, max 100)"
 // @Success      200  {array}   dto.PopularQueryResponse
 // @Failure      500  {object}  ErrorResponse
-// @Router       /analytics/popular-queries [get]
+// @Router       /analytics/popular-queries [get].
 func (h *SearchHandler) PopularQueries(c *gin.Context) {
 	limit := parseIntParam(c, "limit", 10)
 	queries, err := h.analytics.GetPopularQueries(c.Request.Context(), limit)
@@ -158,7 +158,7 @@ func (h *SearchHandler) PopularQueries(c *gin.Context) {
 // @Param        limit  query  int  false  "Number of results (default 10, max 100)"
 // @Success      200  {array}   dto.ProductResponse
 // @Failure      500  {object}  ErrorResponse
-// @Router       /analytics/popular-products [get]
+// @Router       /analytics/popular-products [get].
 func (h *SearchHandler) PopularProducts(c *gin.Context) {
 	limit := parseIntParam(c, "limit", 10)
 	products, err := h.analytics.GetPopularProducts(c.Request.Context(), limit)
@@ -180,7 +180,7 @@ func (h *SearchHandler) PopularProducts(c *gin.Context) {
 // @Failure      400  {object}  ErrorResponse
 // @Failure      404  {object}  ErrorResponse  "Product not found"
 // @Failure      500  {object}  ErrorResponse
-// @Router       /favorites [post]
+// @Router       /favorites [post].
 func (h *SearchHandler) AddFavorite(c *gin.Context) {
 	userID, err := requireUserID(c)
 	if err != nil {
@@ -209,7 +209,7 @@ func (h *SearchHandler) AddFavorite(c *gin.Context) {
 // @Success      204  "No Content"
 // @Failure      400  {object}  ErrorResponse
 // @Failure      500  {object}  ErrorResponse
-// @Router       /favorites [delete]
+// @Router       /favorites [delete].
 func (h *SearchHandler) RemoveFavorite(c *gin.Context) {
 	userID, err := requireUserID(c)
 	if err != nil {
@@ -239,7 +239,7 @@ func (h *SearchHandler) RemoveFavorite(c *gin.Context) {
 // @Success      200  {object}  dto.ProductListResponse
 // @Failure      400  {object}  ErrorResponse
 // @Failure      500  {object}  ErrorResponse
-// @Router       /favorites [get]
+// @Router       /favorites [get].
 func (h *SearchHandler) ListFavorites(c *gin.Context) {
 	userID, err := requireUserID(c)
 	if err != nil {
