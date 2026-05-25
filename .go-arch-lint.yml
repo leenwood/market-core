@@ -1,0 +1,134 @@
+version: 2
+
+workdir: .
+
+components:
+  Domain:
+    in: internal/core/domain
+  Dto:
+    in: internal/core/dto
+  Port:
+    in: internal/core/port
+  Mapper:
+    in: internal/core/mapper
+  UsecaseProduct:
+    in: internal/core/usecase/product
+  UsecaseCategory:
+    in: internal/core/usecase/category
+  UsecaseSearch:
+    in: internal/core/usecase/search
+  UsecaseAnalytics:
+    in: internal/core/usecase/analytics
+  UsecaseFavorites:
+    in: internal/core/usecase/favorites
+  StoragePostgres:
+    in: internal/infra/storage/postgres
+  Logger:
+    in: internal/platform/logger
+  Metrics:
+    in: internal/platform/metrics
+  HttpHandler:
+    in: internal/app/http/handler
+  HttpMiddleware:
+    in: internal/app/http/middleware
+  HttpServer:
+    in: internal/app/http
+  AppMigrate:
+    in: internal/app/migrate
+  AppService:
+    in: internal/app/service
+  Config:
+    in: internal
+
+deps:
+  Domain:
+    mayDependOn: []
+  Dto:
+    mayDependOn: []
+  Port:
+    mayDependOn:
+      - Domain
+      - Dto
+  Mapper:
+    mayDependOn:
+      - Domain
+      - Dto
+  UsecaseProduct:
+    mayDependOn:
+      - Domain
+      - Dto
+      - Port
+      - Mapper
+      - Logger
+  UsecaseCategory:
+    mayDependOn:
+      - Domain
+      - Dto
+      - Port
+      - Mapper
+      - Logger
+  UsecaseSearch:
+    mayDependOn:
+      - Domain
+      - Dto
+      - Port
+      - Mapper
+      - Logger
+  UsecaseAnalytics:
+    mayDependOn:
+      - Domain
+      - Dto
+      - Port
+      - Mapper
+      - Logger
+  UsecaseFavorites:
+    mayDependOn:
+      - Domain
+      - Dto
+      - Port
+      - Mapper
+      - Logger
+  StoragePostgres:
+    mayDependOn:
+      - Domain
+      - Dto
+      - Logger
+  Logger:
+    mayDependOn: []
+  Metrics:
+    mayDependOn: []
+  HttpHandler:
+    mayDependOn:
+      - Domain
+      - Dto
+      - Port
+      - UsecaseProduct
+      - UsecaseCategory
+      - UsecaseSearch
+      - UsecaseAnalytics
+      - UsecaseFavorites
+  HttpMiddleware:
+    mayDependOn:
+      - Logger
+      - Metrics
+  HttpServer:
+    mayDependOn:
+      - HttpHandler
+      - HttpMiddleware
+      - Logger
+      - Metrics
+  AppMigrate:
+    mayDependOn: []
+  AppService:
+    mayDependOn:
+      - Config
+      - HttpServer
+      - HttpHandler
+      - UsecaseProduct
+      - UsecaseCategory
+      - UsecaseSearch
+      - UsecaseAnalytics
+      - UsecaseFavorites
+      - StoragePostgres
+      - Logger
+      - Metrics
