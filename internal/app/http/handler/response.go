@@ -1,11 +1,12 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 
 	"market-core/internal/core/domain"
+
+	"github.com/gin-gonic/gin"
 )
 
 // ErrorResponse is the standard error envelope returned on all 4xx/5xx responses.
@@ -13,18 +14,11 @@ type ErrorResponse struct {
 	Error string `json:"error" example:"not found"`
 }
 
-type envelope struct {
-	Data  any    `json:"data,omitempty"`
-	Error string `json:"error,omitempty"`
+func writeJSON(c *gin.Context, status int, data any) {
+	c.JSON(status, gin.H{"data": data})
 }
 
-func writeJSON(w http.ResponseWriter, status int, data any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(envelope{Data: data}) //nolint:errcheck
-}
-
-func writeError(w http.ResponseWriter, err error) {
+func writeError(c *gin.Context, err error) {
 	status := http.StatusInternalServerError
 	switch {
 	case errors.Is(err, domain.ErrNotFound):
@@ -34,13 +28,9 @@ func writeError(w http.ResponseWriter, err error) {
 	case errors.Is(err, domain.ErrInvalidInput):
 		status = http.StatusBadRequest
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(envelope{Error: err.Error()}) //nolint:errcheck
+	c.JSON(status, ErrorResponse{Error: err.Error()})
 }
 
-func writeBadRequest(w http.ResponseWriter, msg string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusBadRequest)
-	json.NewEncoder(w).Encode(envelope{Error: msg}) //nolint:errcheck
+func writeBadRequest(c *gin.Context, msg string) {
+	c.JSON(http.StatusBadRequest, ErrorResponse{Error: msg})
 }

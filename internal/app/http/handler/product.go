@@ -1,14 +1,13 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 
 	"market-core/internal/core/dto"
 	productUC "market-core/internal/core/usecase/product"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
@@ -42,19 +41,19 @@ func NewProductHandler(
 // @Failure      404      {object}  ErrorResponse  "Category not found"
 // @Failure      500      {object}  ErrorResponse
 // @Router       /products [post]
-func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
+func (h *ProductHandler) Create(c *gin.Context) {
 	var req dto.CreateProductRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeBadRequest(w, "invalid request body")
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeBadRequest(c, "invalid request body")
 		return
 	}
 
-	resp, err := h.create.Execute(r.Context(), req)
+	resp, err := h.create.Execute(c.Request.Context(), req)
 	if err != nil {
-		writeError(w, err)
+		writeError(c, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, resp)
+	writeJSON(c, http.StatusCreated, resp)
 }
 
 // Update godoc
@@ -70,25 +69,25 @@ func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Failure      404      {object}  ErrorResponse
 // @Failure      500      {object}  ErrorResponse
 // @Router       /products/{id} [put]
-func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
-	id, err := parseUUID(chi.URLParam(r, "id"))
+func (h *ProductHandler) Update(c *gin.Context) {
+	id, err := parseUUID(c.Param("id"))
 	if err != nil {
-		writeBadRequest(w, "invalid product id")
+		writeBadRequest(c, "invalid product id")
 		return
 	}
 
 	var req dto.UpdateProductRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeBadRequest(w, "invalid request body")
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeBadRequest(c, "invalid request body")
 		return
 	}
 
-	resp, err := h.update.Execute(r.Context(), id, req)
+	resp, err := h.update.Execute(c.Request.Context(), id, req)
 	if err != nil {
-		writeError(w, err)
+		writeError(c, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, resp)
+	writeJSON(c, http.StatusOK, resp)
 }
 
 // Delete godoc
@@ -102,18 +101,18 @@ func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 // @Failure      404  {object}  ErrorResponse
 // @Failure      500  {object}  ErrorResponse
 // @Router       /products/{id} [delete]
-func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	id, err := parseUUID(chi.URLParam(r, "id"))
+func (h *ProductHandler) Delete(c *gin.Context) {
+	id, err := parseUUID(c.Param("id"))
 	if err != nil {
-		writeBadRequest(w, "invalid product id")
+		writeBadRequest(c, "invalid product id")
 		return
 	}
 
-	if err := h.delete.Execute(r.Context(), id); err != nil {
-		writeError(w, err)
+	if err := h.delete.Execute(c.Request.Context(), id); err != nil {
+		writeError(c, err)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+	c.Status(http.StatusNoContent)
 }
 
 // Get godoc
@@ -127,19 +126,19 @@ func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 // @Failure      404  {object}  ErrorResponse
 // @Failure      500  {object}  ErrorResponse
 // @Router       /products/{id} [get]
-func (h *ProductHandler) Get(w http.ResponseWriter, r *http.Request) {
-	id, err := parseUUID(chi.URLParam(r, "id"))
+func (h *ProductHandler) Get(c *gin.Context) {
+	id, err := parseUUID(c.Param("id"))
 	if err != nil {
-		writeBadRequest(w, "invalid product id")
+		writeBadRequest(c, "invalid product id")
 		return
 	}
 
-	resp, err := h.get.Execute(r.Context(), id)
+	resp, err := h.get.Execute(c.Request.Context(), id)
 	if err != nil {
-		writeError(w, err)
+		writeError(c, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, resp)
+	writeJSON(c, http.StatusOK, resp)
 }
 
 // List godoc
@@ -160,52 +159,52 @@ func (h *ProductHandler) Get(w http.ResponseWriter, r *http.Request) {
 // @Success      200  {object}  dto.ProductListResponse
 // @Failure      500  {object}  ErrorResponse
 // @Router       /products [get]
-func (h *ProductHandler) List(w http.ResponseWriter, r *http.Request) {
+func (h *ProductHandler) List(c *gin.Context) {
 	filter := dto.ProductFilter{
-		Page:     parseIntParam(r, "page", 1),
-		PageSize: parseIntParam(r, "page_size", 20),
-		SortBy:   r.URL.Query().Get("sort_by"),
-		SortDir:  r.URL.Query().Get("sort_dir"),
+		Page:     parseIntParam(c, "page", 1),
+		PageSize: parseIntParam(c, "page_size", 20),
+		SortBy:   c.Query("sort_by"),
+		SortDir:  c.Query("sort_dir"),
 	}
 
-	if v := r.URL.Query().Get("category_id"); v != "" {
+	if v := c.Query("category_id"); v != "" {
 		if id, err := uuid.Parse(v); err == nil {
 			filter.CategoryID = &id
-			filter.IncludeSubcategory = r.URL.Query().Get("include_subcategory") == "true"
+			filter.IncludeSubcategory = c.Query("include_subcategory") == "true"
 		}
 	}
-	if v := r.URL.Query().Get("brand"); v != "" {
+	if v := c.Query("brand"); v != "" {
 		filter.Brand = &v
 	}
-	if v := r.URL.Query().Get("min_price"); v != "" {
+	if v := c.Query("min_price"); v != "" {
 		if f, err := strconv.ParseFloat(v, 64); err == nil {
 			filter.MinPrice = &f
 		}
 	}
-	if v := r.URL.Query().Get("max_price"); v != "" {
+	if v := c.Query("max_price"); v != "" {
 		if f, err := strconv.ParseFloat(v, 64); err == nil {
 			filter.MaxPrice = &f
 		}
 	}
-	if v := r.URL.Query().Get("in_stock"); v != "" {
+	if v := c.Query("in_stock"); v != "" {
 		b := v == "true"
 		filter.InStock = &b
 	}
 
-	resp, err := h.list.Execute(r.Context(), filter)
+	resp, err := h.list.Execute(c.Request.Context(), filter)
 	if err != nil {
-		writeError(w, err)
+		writeError(c, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, resp)
+	writeJSON(c, http.StatusOK, resp)
 }
 
 func parseUUID(s string) (uuid.UUID, error) {
 	return uuid.Parse(s)
 }
 
-func parseIntParam(r *http.Request, key string, def int) int {
-	v := r.URL.Query().Get(key)
+func parseIntParam(c *gin.Context, key string, def int) int {
+	v := c.Query(key)
 	if v == "" {
 		return def
 	}

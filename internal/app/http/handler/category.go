@@ -1,13 +1,12 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"market-core/internal/core/dto"
 	categoryUC "market-core/internal/core/usecase/category"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/gin-gonic/gin"
 )
 
 type CategoryHandler struct {
@@ -39,19 +38,19 @@ func NewCategoryHandler(
 // @Failure      409      {object}  ErrorResponse  "Slug already taken"
 // @Failure      500      {object}  ErrorResponse
 // @Router       /categories [post]
-func (h *CategoryHandler) Create(w http.ResponseWriter, r *http.Request) {
+func (h *CategoryHandler) Create(c *gin.Context) {
 	var req dto.CreateCategoryRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeBadRequest(w, "invalid request body")
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeBadRequest(c, "invalid request body")
 		return
 	}
 
-	resp, err := h.create.Execute(r.Context(), req)
+	resp, err := h.create.Execute(c.Request.Context(), req)
 	if err != nil {
-		writeError(w, err)
+		writeError(c, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, resp)
+	writeJSON(c, http.StatusCreated, resp)
 }
 
 // Get godoc
@@ -65,19 +64,19 @@ func (h *CategoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Failure      404  {object}  ErrorResponse
 // @Failure      500  {object}  ErrorResponse
 // @Router       /categories/{id} [get]
-func (h *CategoryHandler) Get(w http.ResponseWriter, r *http.Request) {
-	id, err := parseUUID(chi.URLParam(r, "id"))
+func (h *CategoryHandler) Get(c *gin.Context) {
+	id, err := parseUUID(c.Param("id"))
 	if err != nil {
-		writeBadRequest(w, "invalid category id")
+		writeBadRequest(c, "invalid category id")
 		return
 	}
 
-	resp, err := h.get.Execute(r.Context(), id)
+	resp, err := h.get.Execute(c.Request.Context(), id)
 	if err != nil {
-		writeError(w, err)
+		writeError(c, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, resp)
+	writeJSON(c, http.StatusOK, resp)
 }
 
 // List godoc
@@ -88,13 +87,13 @@ func (h *CategoryHandler) Get(w http.ResponseWriter, r *http.Request) {
 // @Success      200  {array}   dto.CategoryResponse
 // @Failure      500  {object}  ErrorResponse
 // @Router       /categories [get]
-func (h *CategoryHandler) List(w http.ResponseWriter, r *http.Request) {
-	resp, err := h.list.Execute(r.Context())
+func (h *CategoryHandler) List(c *gin.Context) {
+	resp, err := h.list.Execute(c.Request.Context())
 	if err != nil {
-		writeError(w, err)
+		writeError(c, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, resp)
+	writeJSON(c, http.StatusOK, resp)
 }
 
 // Delete godoc
@@ -108,16 +107,16 @@ func (h *CategoryHandler) List(w http.ResponseWriter, r *http.Request) {
 // @Failure      404  {object}  ErrorResponse
 // @Failure      500  {object}  ErrorResponse
 // @Router       /categories/{id} [delete]
-func (h *CategoryHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	id, err := parseUUID(chi.URLParam(r, "id"))
+func (h *CategoryHandler) Delete(c *gin.Context) {
+	id, err := parseUUID(c.Param("id"))
 	if err != nil {
-		writeBadRequest(w, "invalid category id")
+		writeBadRequest(c, "invalid category id")
 		return
 	}
 
-	if err := h.delete.Execute(r.Context(), id); err != nil {
-		writeError(w, err)
+	if err := h.delete.Execute(c.Request.Context(), id); err != nil {
+		writeError(c, err)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+	c.Status(http.StatusNoContent)
 }

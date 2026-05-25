@@ -2,19 +2,18 @@ package http
 
 import (
 	"log/slog"
-	"net/http"
 
 	"market-core/internal/app/http/handler"
 	"market-core/internal/app/http/middleware"
 
-	"github.com/go-chi/chi/v5"
-	chiMiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	httpSwagger "github.com/swaggo/http-swagger/v2"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 type Server struct {
-	router http.Handler
+	engine *gin.Engine
 	addr   string
 }
 
@@ -26,55 +25,49 @@ type Deps struct {
 }
 
 func NewServer(addr string, log *slog.Logger, deps Deps) *Server {
-	r := chi.NewRouter()
+	gin.SetMode(gin.ReleaseMode)
 
+	r := gin.New()
 	r.Use(middleware.Recover(log))
-	r.Use(middleware.RequestID)
+	r.Use(middleware.RequestID())
 	r.Use(middleware.Logger(log))
-	r.Use(chiMiddleware.Compress(5))
 
-	r.Get("/health", deps.Health.Health)
-	r.Handle("/metrics", promhttp.Handler())
-	r.Get("/swagger/*", httpSwagger.Handler(
-		httpSwagger.URL("/swagger/doc.json"),
-	))
+	r.GET("/health", deps.Health.Health)
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	r.Route("/api/v1", func(r chi.Router) {
-		r.Route("/products", func(r chi.Router) {
-			r.Post("/", deps.Products.Create)
-			r.Get("/", deps.Products.List)
-			r.Get("/{id}", deps.Products.Get)
-			r.Put("/{id}", deps.Products.Update)
-			r.Delete("/{id}", deps.Products.Delete)
-		})
+	v1 := r.Group("/api/v1")
+	{
+		p := v1.Group("/products")
+		p.POST("", deps.Products.Create)
+		p.GET("", deps.Products.List)
+		p.GET("/:id", deps.Products.Get)
+		p.PUT("/:id", deps.Products.Update)
+		p.DELETE("/:id", deps.Products.Delete)
 
-		r.Route("/categories", func(r chi.Router) {
-			r.Post("/", deps.Categories.Create)
-			r.Get("/", deps.Categories.List)
-			r.Get("/{id}", deps.Categories.Get)
-			r.Delete("/{id}", deps.Categories.Delete)
-		})
+		cat := v1.Group("/categories")
+		cat.POST("", deps.Categories.Create)
+		cat.GET("", deps.Categories.List)
+		cat.GET("/:id", deps.Categories.Get)
+		cat.DELETE("/:id", deps.Categories.Delete)
 
-		r.Route("/search", func(r chi.Router) {
-			r.Get("/", deps.Search.Search)
-			r.Get("/autocomplete", deps.Search.Autocomplete)
-		})
+		s := v1.Group("/search")
+		s.GET("", deps.Search.Search)
+		s.GET("/autocomplete", deps.Search.Autocomplete)
 
-		r.Route("/favorites", func(r chi.Router) {
-			r.Get("/", deps.Search.ListFavorites)
-			r.Post("/", deps.Search.AddFavorite)
-			r.Delete("/", deps.Search.RemoveFavorite)
-		})
+		fav := v1.Group("/favorites")
+		fav.GET("", deps.Search.ListFavorites)
+		fav.POST("", deps.Search.AddFavorite)
+		fav.DELETE("", deps.Search.RemoveFavorite)
 
-		r.Route("/analytics", func(r chi.Router) {
-			r.Get("/popular-queries", deps.Search.PopularQueries)
-			r.Get("/popular-products", deps.Search.PopularProducts)
-		})
-	})
+		a := v1.Group("/analytics")
+		a.GET("/popular-queries", deps.Search.PopularQueries)
+		a.GET("/popular-products", deps.Search.PopularProducts)
+	}
 
-	return &Server{router: r, addr: addr}
+	return &Server{engine: r, addr: addr}
 }
 
 func (s *Server) ListenAndServe() error {
-	return http.ListenAndServe(s.addr, s.router)
+	return s.engine.Run(s.addr)
 }

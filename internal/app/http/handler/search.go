@@ -9,6 +9,7 @@ import (
 	favoritesUC "market-core/internal/core/usecase/favorites"
 	searchUC "market-core/internal/core/usecase/search"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
@@ -54,49 +55,49 @@ func NewSearchHandler(
 // @Success      200  {object}  dto.SearchResponse
 // @Failure      500  {object}  ErrorResponse
 // @Router       /search [get]
-func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
+func (h *SearchHandler) Search(c *gin.Context) {
 	req := dto.SearchRequest{
-		Query:    r.URL.Query().Get("q"),
-		SortBy:   r.URL.Query().Get("sort_by"),
-		SortDir:  r.URL.Query().Get("sort_dir"),
-		Page:     parseIntParam(r, "page", 1),
-		PageSize: parseIntParam(r, "page_size", 20),
+		Query:    c.Query("q"),
+		SortBy:   c.Query("sort_by"),
+		SortDir:  c.Query("sort_dir"),
+		Page:     parseIntParam(c, "page", 1),
+		PageSize: parseIntParam(c, "page_size", 20),
 	}
 
-	if v := r.URL.Query().Get("category_id"); v != "" {
+	if v := c.Query("category_id"); v != "" {
 		if id, err := uuid.Parse(v); err == nil {
 			req.CategoryID = &id
 		}
 	}
-	if v := r.URL.Query().Get("brand"); v != "" {
+	if v := c.Query("brand"); v != "" {
 		req.Brand = &v
 	}
-	if v := r.URL.Query().Get("min_price"); v != "" {
+	if v := c.Query("min_price"); v != "" {
 		if f, err := strconv.ParseFloat(v, 64); err == nil {
 			req.MinPrice = &f
 		}
 	}
-	if v := r.URL.Query().Get("max_price"); v != "" {
+	if v := c.Query("max_price"); v != "" {
 		if f, err := strconv.ParseFloat(v, 64); err == nil {
 			req.MaxPrice = &f
 		}
 	}
-	if v := r.URL.Query().Get("in_stock"); v != "" {
+	if v := c.Query("in_stock"); v != "" {
 		b := v == "true"
 		req.InStock = &b
 	}
-	if v := r.Header.Get("X-User-ID"); v != "" {
+	if v := c.GetHeader("X-User-ID"); v != "" {
 		if id, err := uuid.Parse(v); err == nil {
 			req.UserID = &id
 		}
 	}
 
-	resp, err := h.search.Execute(r.Context(), req)
+	resp, err := h.search.Execute(c.Request.Context(), req)
 	if err != nil {
-		writeError(w, err)
+		writeError(c, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, resp)
+	writeJSON(c, http.StatusOK, resp)
 }
 
 // Autocomplete godoc
@@ -110,24 +111,24 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 // @Failure      400  {object}  ErrorResponse
 // @Failure      500  {object}  ErrorResponse
 // @Router       /search/autocomplete [get]
-func (h *SearchHandler) Autocomplete(w http.ResponseWriter, r *http.Request) {
-	prefix := r.URL.Query().Get("q")
+func (h *SearchHandler) Autocomplete(c *gin.Context) {
+	prefix := c.Query("q")
 	if prefix == "" {
-		writeBadRequest(w, "q parameter is required")
+		writeBadRequest(c, "q parameter is required")
 		return
 	}
 
 	req := dto.AutocompleteRequest{
 		Prefix: prefix,
-		Limit:  parseIntParam(r, "limit", 10),
+		Limit:  parseIntParam(c, "limit", 10),
 	}
 
-	resp, err := h.autocomplete.Execute(r.Context(), req)
+	resp, err := h.autocomplete.Execute(c.Request.Context(), req)
 	if err != nil {
-		writeError(w, err)
+		writeError(c, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, resp)
+	writeJSON(c, http.StatusOK, resp)
 }
 
 // PopularQueries godoc
@@ -139,14 +140,14 @@ func (h *SearchHandler) Autocomplete(w http.ResponseWriter, r *http.Request) {
 // @Success      200  {array}   dto.PopularQueryResponse
 // @Failure      500  {object}  ErrorResponse
 // @Router       /analytics/popular-queries [get]
-func (h *SearchHandler) PopularQueries(w http.ResponseWriter, r *http.Request) {
-	limit := parseIntParam(r, "limit", 10)
-	queries, err := h.analytics.GetPopularQueries(r.Context(), limit)
+func (h *SearchHandler) PopularQueries(c *gin.Context) {
+	limit := parseIntParam(c, "limit", 10)
+	queries, err := h.analytics.GetPopularQueries(c.Request.Context(), limit)
 	if err != nil {
-		writeError(w, err)
+		writeError(c, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, queries)
+	writeJSON(c, http.StatusOK, queries)
 }
 
 // PopularProducts godoc
@@ -158,14 +159,14 @@ func (h *SearchHandler) PopularQueries(w http.ResponseWriter, r *http.Request) {
 // @Success      200  {array}   dto.ProductResponse
 // @Failure      500  {object}  ErrorResponse
 // @Router       /analytics/popular-products [get]
-func (h *SearchHandler) PopularProducts(w http.ResponseWriter, r *http.Request) {
-	limit := parseIntParam(r, "limit", 10)
-	products, err := h.analytics.GetPopularProducts(r.Context(), limit)
+func (h *SearchHandler) PopularProducts(c *gin.Context) {
+	limit := parseIntParam(c, "limit", 10)
+	products, err := h.analytics.GetPopularProducts(c.Request.Context(), limit)
 	if err != nil {
-		writeError(w, err)
+		writeError(c, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, products)
+	writeJSON(c, http.StatusOK, products)
 }
 
 // AddFavorite godoc
@@ -180,22 +181,22 @@ func (h *SearchHandler) PopularProducts(w http.ResponseWriter, r *http.Request) 
 // @Failure      404  {object}  ErrorResponse  "Product not found"
 // @Failure      500  {object}  ErrorResponse
 // @Router       /favorites [post]
-func (h *SearchHandler) AddFavorite(w http.ResponseWriter, r *http.Request) {
-	userID, err := requireUserID(r)
+func (h *SearchHandler) AddFavorite(c *gin.Context) {
+	userID, err := requireUserID(c)
 	if err != nil {
-		writeBadRequest(w, "X-User-ID header required")
+		writeBadRequest(c, "X-User-ID header required")
 		return
 	}
-	productID, err := parseUUID(r.URL.Query().Get("product_id"))
+	productID, err := parseUUID(c.Query("product_id"))
 	if err != nil {
-		writeBadRequest(w, "invalid product_id")
+		writeBadRequest(c, "invalid product_id")
 		return
 	}
-	if err := h.favorites.Add(r.Context(), userID, productID); err != nil {
-		writeError(w, err)
+	if err := h.favorites.Add(c.Request.Context(), userID, productID); err != nil {
+		writeError(c, err)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+	c.Status(http.StatusNoContent)
 }
 
 // RemoveFavorite godoc
@@ -209,22 +210,22 @@ func (h *SearchHandler) AddFavorite(w http.ResponseWriter, r *http.Request) {
 // @Failure      400  {object}  ErrorResponse
 // @Failure      500  {object}  ErrorResponse
 // @Router       /favorites [delete]
-func (h *SearchHandler) RemoveFavorite(w http.ResponseWriter, r *http.Request) {
-	userID, err := requireUserID(r)
+func (h *SearchHandler) RemoveFavorite(c *gin.Context) {
+	userID, err := requireUserID(c)
 	if err != nil {
-		writeBadRequest(w, "X-User-ID header required")
+		writeBadRequest(c, "X-User-ID header required")
 		return
 	}
-	productID, err := parseUUID(r.URL.Query().Get("product_id"))
+	productID, err := parseUUID(c.Query("product_id"))
 	if err != nil {
-		writeBadRequest(w, "invalid product_id")
+		writeBadRequest(c, "invalid product_id")
 		return
 	}
-	if err := h.favorites.Remove(r.Context(), userID, productID); err != nil {
-		writeError(w, err)
+	if err := h.favorites.Remove(c.Request.Context(), userID, productID); err != nil {
+		writeError(c, err)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+	c.Status(http.StatusNoContent)
 }
 
 // ListFavorites godoc
@@ -239,23 +240,23 @@ func (h *SearchHandler) RemoveFavorite(w http.ResponseWriter, r *http.Request) {
 // @Failure      400  {object}  ErrorResponse
 // @Failure      500  {object}  ErrorResponse
 // @Router       /favorites [get]
-func (h *SearchHandler) ListFavorites(w http.ResponseWriter, r *http.Request) {
-	userID, err := requireUserID(r)
+func (h *SearchHandler) ListFavorites(c *gin.Context) {
+	userID, err := requireUserID(c)
 	if err != nil {
-		writeBadRequest(w, "X-User-ID header required")
+		writeBadRequest(c, "X-User-ID header required")
 		return
 	}
-	page := parseIntParam(r, "page", 1)
-	pageSize := parseIntParam(r, "page_size", 20)
+	page := parseIntParam(c, "page", 1)
+	pageSize := parseIntParam(c, "page_size", 20)
 
-	resp, err := h.favorites.List(r.Context(), userID, page, pageSize)
+	resp, err := h.favorites.List(c.Request.Context(), userID, page, pageSize)
 	if err != nil {
-		writeError(w, err)
+		writeError(c, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, resp)
+	writeJSON(c, http.StatusOK, resp)
 }
 
-func requireUserID(r *http.Request) (uuid.UUID, error) {
-	return uuid.Parse(r.Header.Get("X-User-ID"))
+func requireUserID(c *gin.Context) (uuid.UUID, error) {
+	return uuid.Parse(c.GetHeader("X-User-ID"))
 }

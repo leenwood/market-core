@@ -1,20 +1,19 @@
 package middleware
 
 import (
-	"net/http"
-
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 const HeaderRequestID = "X-Request-ID"
 
-func RequestID(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := r.Header.Get(HeaderRequestID)
+func RequestID() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := c.GetHeader(HeaderRequestID)
 		if id == "" {
 			id = uuid.New().String()
 		}
-		w.Header().Set(HeaderRequestID, id)
-		next.ServeHTTP(w, r)
-	})
+		c.Header(HeaderRequestID, id)
+		c.Next()
+	}
 }
