@@ -17,6 +17,7 @@ CREATE TABLE products (
     deleted_at   TIMESTAMPTZ
 );
 
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION products_search_vector_update() RETURNS TRIGGER AS $$
 BEGIN
     NEW.search_vector :=
@@ -26,6 +27,7 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+-- +goose StatementEnd
 
 CREATE TRIGGER trg_products_search_vector
     BEFORE INSERT OR UPDATE OF name, description, brand
